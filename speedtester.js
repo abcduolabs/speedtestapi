@@ -5,12 +5,37 @@ var memdb = new datastore();
 
 function getLatest(callback) {
   var data = [];
-  db.find().limit(10).exec(function(err, docs) {
+  db.find().sort({ts: -1}).limit(1).exec(function(err, docs) {
     if(err) callback(error);
     for(var i=0; i< docs.length; i++) {
       var d = {
         "result": docs[i],
-        "links": { "self": "/api/speedtest/" + docs[i]._id }
+        "links": { 
+          "self": { "href": "/api/speedtest/" + docs[i]._id },
+          "reports": { "href": "/api/speedtest/reports" }
+        }
+      }; 
+      data.push(d);
+    }
+    callback(null, data);
+  });
+}
+
+function getBestResult(down, callback) {
+  var data = [];
+  var sortfield = { "download": -1 };
+  if (down == false) {
+    sortfield = { "upload": -1 };
+  }
+  db.find().sort(sortfield).limit(1).exec(function(err, docs) {
+    if(err) callback(error);
+    for(var i=0; i< docs.length; i++) {
+      var d = {
+        "result": docs[i],
+        "links": { 
+          "self": { "href": "/api/speedtest/" + docs[i]._id },
+          "reports": { "href": "/api/speedtest/reports" }
+        }
       }; 
       data.push(d);
     }
@@ -26,6 +51,7 @@ function getTestByID(id, callback) {
       "links": {
         "self": { "href": "/api/speedtest/" + id },
         "latest": { "href": "/api/speedtest/latest" },
+        "reports": { "href": "/api/speedtest/reports" }
       },
     };
     callback(null, data);
@@ -37,7 +63,7 @@ function getReport(type, callback) {
   var up = [];
   var down = [];
   var data;
-  db.find().limit(200).exec(function(err, docs) {
+  db.find().sort({ts: -1}).limit(200).exec(function(err, docs) {
     if(err) callback(error);
     for(var i=0; i< docs.length; i++) {
       up.push(docs[i].upload);
@@ -45,6 +71,8 @@ function getReport(type, callback) {
     }
     if (type == 'chart') {
       data = { 'up': up, 'down': down };
+    } else {
+      callback("Invalid report type requested");
     }
     callback(null, data);
   });
@@ -124,6 +152,9 @@ function execute(callback) {
       "links": {
         "self": { "href": "/api/speedtest/running/" + newDoc._id },
         "latest": { "href": "/api/speedtest/latest" },
+        "reports": { "href": "/api/speedtest/reports" },
+        "bestdown": { "href": "/api/speedtest/best/down" },
+        "bestup": { "href": "/api/speedtest/best/up" }
       },
      });    
   });
@@ -132,6 +163,7 @@ function execute(callback) {
 
 module.exports = {
   getLatest : getLatest,
+  getBestResult : getBestResult,
   getRunningTestByID : getRunningTestByID,
   getTestByID : getTestByID,
   getReport : getReport,
