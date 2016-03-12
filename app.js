@@ -44,7 +44,32 @@ function getStatus(req, res, next) {
   });
 }
 
+function getTest(req, res, next) {
+  var id = req.params.id;
+  console.log("Serving request to get test results for ID: " + id);
+  speedtester.getTestByID(id, function(error, data) {
+    if(error) {
+      // Should return 404?
+      return next(new restify.errors.InternalServerError("Failed to get test"));
+    }
+    res.send(data);
+  });
+}
+
+function reportChart(req, res, next) {
+  console.log("Serving request to get report chart");
+  speedtester.getReport('chart', function(error, data) {
+    if(error) {
+      // Should return 404?
+      return next(new restify.errors.InternalServerError("Failed to get report"));
+    }
+    res.send(data);
+  });
+}
+
 server.get({ path: '/api/speedtest/latest' }, latestTest);
+server.get({ path: '/api/speedtest/reports/chart' }, reportChart);
+server.get({ path: '/api/speedtest/:id' }, getTest);
 server.get({ path: '/api/speedtest/running/:id' }, getStatus); 
 server.post({ path: '/api/speedtest' }, runTest);
 
