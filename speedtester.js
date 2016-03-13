@@ -43,6 +43,40 @@ function getBestResult(down, callback) {
   });
 }
 
+function getStats(callback) {
+  db.find().limit(200).exec(function(err, docs) {
+    if(err) callback(error);
+    var down = { 'sum': 0, 'max': 0, 'avg': 0 };
+    var up = { 'sum': 0, 'max': 0, 'avg': 0 };
+    for(var i=0; i< docs.length; i++) {
+      down.sum += docs[i].download;
+      if (docs[i].download > down.max) down.max = docs[i].download;
+      up.sum += docs[i].upload;
+      if (docs[i].upload > up.max) up.max = docs[i].upload;
+    }
+    down.avg = down.sum / docs.length;
+    up.avg = up.sum / docs.length;
+    
+    var data = {
+      "stats" : {
+        "down": {
+          "max": down.max,
+          "avg": down.avg
+        },
+        "up": {
+          "max": up.max,
+          "avg": up.avg
+        },
+      },
+      "links": { 
+        "self": { "href": "/api/speedtest/reports/stats" },
+        "reports": { "href": "/api/speedtest/reports" }
+      }
+    };
+    callback(null, data);
+  });
+}
+
 function getTestByID(id, callback) {
   db.findOne( {_id: id }, function(err, doc) {
     if(err) callback(err);
@@ -164,6 +198,7 @@ function execute(callback) {
 module.exports = {
   getLatest : getLatest,
   getBestResult : getBestResult,
+  getStats : getStats,
   getRunningTestByID : getRunningTestByID,
   getTestByID : getTestByID,
   getReport : getReport,

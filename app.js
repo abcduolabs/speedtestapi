@@ -33,6 +33,17 @@ function bestTestDown(req, res, next) {
   return next();
 }
 
+function reportStats(req, res, next) {
+  console.log("Serving request to get stats");
+  speedtester.getStats(function(error, data) {
+    if(error) {
+      return next(new restify.errors.InternalServerError("Failed to get stats"));
+    }
+    res.send(data);
+  });
+  return next();
+}
+
 function runTest(req, res, next) {
   console.log("Serving request to run speed test");
   speedtester.execute(function(error, data) {
@@ -81,6 +92,7 @@ function reportChart(req, res, next) {
 
 server.get({ path: '/api/speedtest/latest' }, latestTest);
 server.get({ path: '/api/speedtest/best/down' }, bestTestDown);
+server.get({ path: '/api/speedtest/reports/stats' }, reportStats);
 server.get({ path: '/api/speedtest/reports/chart' }, reportChart);
 server.get({ path: '/api/speedtest/:id' }, getTest);
 server.get({ path: '/api/speedtest/running/:id' }, getStatus); 
